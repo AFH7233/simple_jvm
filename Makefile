@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Wall -Wextra -Werror -pedantic -std=c2x -Iinclude -g
+CFLAGS = -Wall -Wextra -Werror -pedantic -std=c2x -Iinclude -g -DDEBUG
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
