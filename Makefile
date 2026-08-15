@@ -23,3 +23,16 @@ $(BIN_DIR) $(OBJ_DIR):
 
 clean:
 	rm -rf $(BIN_DIR) $(OBJ_DIR)
+
+# Java
+JAVAC = javac
+
+$(OBJ_DIR)/%.class: $(SRC_DIR)/%.java
+	$(JAVAC) $< -d $(OBJ_DIR)
+
+test/%.class: test/%.java
+	$(JAVAC) $<
+
+test: all test/Add.class
+	@echo "Wacha"
+	./$(TARGET) test/Add.class

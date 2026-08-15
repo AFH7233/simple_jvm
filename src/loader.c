@@ -4,11 +4,12 @@
 
 #include "../include/log.h"
 
+/*
 static u1 read_u1(FILE* file) {
   u1 val;
   fread(&val, 1, 1, file);
   return val;
-}
+}*/
 
 static u2 read_u2(FILE* file) {
   u1 bytes[2];
@@ -16,12 +17,12 @@ static u2 read_u2(FILE* file) {
   return (bytes[0] << 8) | bytes[1];
 }
 
-/*
+
 static u4 read_u4(FILE* file) {
   u1 bytes[4];
   fread(&bytes, 1, 4, file);
   return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-}*/
+}
 
 class_file* load_class_file(const char* name) {
   FILE* file = fopen(name, "rb");
@@ -33,9 +34,9 @@ class_file* load_class_file(const char* name) {
   class_file*  jvm_class = malloc(sizeof(class_file));
 
   //Magic
-  jvm_class->magic = read_u1(file);
+  jvm_class->magic = read_u4(file);
   if (jvm_class->magic != 0xCAFEBABE) {
-    fprintf(stderr, "No es una clase de jvm hdtpm");
+    fprintf(stderr, "No es una clase de jvm hdtpm!!\a\n");
     free(jvm_class);
     fclose(file);
     return NULL;
