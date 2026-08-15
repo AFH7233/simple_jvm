@@ -4,3 +4,8 @@
 **/out
 /.idea/*
 /build/cmake-build-*
+/test/Add.class
+/bin/jvm
+/obj/loader.o
+/obj/main.o
+/obj/vm.o
