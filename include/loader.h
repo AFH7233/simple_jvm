@@ -34,7 +34,7 @@ struct class_file{
     u2 major_version;
     u2 minor_version;
     u2 constant_pool_count;
-
+    struct class_info* constant_pool;
 };
 
 struct class_file* load_class_file(const char* name);

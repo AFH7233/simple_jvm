@@ -46,8 +46,38 @@ struct class_file* load_class_file(const char* name) {
   jvm_class->minor_version = read_u2(file);
   jvm_class->major_version = read_u2(file);
 
+  //Constant Pool
+  jvm_class->constant_pool_count = read_u2(file);
+  jvm_class->constant_pool = calloc(jvm_class->constant_pool_count, sizeof(struct class_info));
+  for (int i = 1; i <= jvm_class->constant_pool_count; i++) {
+    jvm_class->constant_pool[i].tag = read_u2(file);
+    switch (jvm_class->constant_pool[i].tag) {
+      case CONSTANT_Utf8:
+      case CONSTANT_Integer:
+      case CONSTANT_Float:
+      case CONSTANT_Long:
+      case CONSTANT_Double:
+      case CONSTANT_Class:
+      case CONSTANT_String:
+      case CONSTANT_Fieldref:
+      case CONSTANT_Methodref:
+      case CONSTANT_InterfaceMethodref:
+      case CONSTANT_NameAndType:
+      case CONSTANT_MethodHandle:
+      case CONSTANT_MethodType:
+      case CONSTANT_Dynamic:
+      case CONSTANT_InvokeDynamic:
+      case CONSTANT_Module:
+      case CONSTANT_Package:
+      default:
+        break;
+    }
+  }
+
   LOG("Magic Number: 0x%X\n", jvm_class->magic);
   LOG("Major version: %d\n", jvm_class->major_version);
+  LOG("Minor version: %d\n", jvm_class->minor_version);
+  LOG("Constant pool count: %d\n", jvm_class->constant_pool_count);
 
   fclose(file);
   return jvm_class;
