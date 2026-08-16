@@ -26,7 +26,29 @@ enum constant_tag {
 
 struct class_info {
   u1 tag;
+  u1 *info;
+};
+
+struct attribute_info {
   u2 name_index;
+  u4 length;
+  u1 *info;
+};
+
+struct method_info {
+  u2 access_flags;
+  u2 name_index;
+  u2 descriptor_index;
+  u2 attribute_count;
+  struct attribute_info *attributes;
+};
+
+struct field_info {
+  u2 access_flags;
+  u2 name_index;
+  u2 descriptor_index;
+  u2 attribute_count;
+  struct attribute_info *attributes;
 };
 
 struct class_file {
@@ -35,6 +57,17 @@ struct class_file {
   u2 minor_version;
   u2 constant_pool_count;
   struct class_info *constant_pool;
+  u2 access_flags;
+  u2 this_class;
+  u2 super_class;
+  u2 interfaces_count;
+  u2 *interfaces;
+  u2 fields_count;
+  struct field_info *fields;
+  u2 methods_count;
+  struct method_info *methods;
+  u2 attribute_count;
+  struct attribute_info *attributes;
 };
 
 struct class_file *load_class_file(const char *name);

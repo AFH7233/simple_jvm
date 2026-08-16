@@ -4,12 +4,11 @@
 
 #include "../include/log.h"
 
-/*
-static u1 read_u1(FILE* file) {
+static u1 read_u1(FILE *file) {
   u1 val;
   fread(&val, 1, 1, file);
   return val;
-}*/
+}
 
 static u2 read_u2(FILE *file) {
   u1 bytes[2];
@@ -48,28 +47,113 @@ struct class_file *load_class_file(const char *name) {
   //Constant Pool
   jvm_class->constant_pool_count = read_u2(file);
   jvm_class->constant_pool = calloc(jvm_class->constant_pool_count, sizeof(struct class_info));
-  for (int i = 1; i <= jvm_class->constant_pool_count; i++) {
-    jvm_class->constant_pool[i].tag = read_u2(file);
+  for (int i = 1; i < jvm_class->constant_pool_count; i++) {
+    jvm_class->constant_pool[i].tag = read_u1(file);
     switch (jvm_class->constant_pool[i].tag) {
-      case CONSTANT_Utf8:
+      case CONSTANT_Utf8: {
+        const u2 length = read_u2(file);
+        jvm_class->constant_pool[i].info = malloc(2 + length);
+        jvm_class->constant_pool[i].info[0] = length >> 8;
+        jvm_class->constant_pool[i].info[1] = length & 0xff;
+        fread(jvm_class->constant_pool[i].info + 2, 1, length, file);
+        break;
+      }
       case CONSTANT_Integer:
       case CONSTANT_Float:
-      case CONSTANT_Long:
-      case CONSTANT_Double:
-      case CONSTANT_Class:
-      case CONSTANT_String:
       case CONSTANT_Fieldref:
       case CONSTANT_Methodref:
       case CONSTANT_InterfaceMethodref:
       case CONSTANT_NameAndType:
-      case CONSTANT_MethodHandle:
-      case CONSTANT_MethodType:
       case CONSTANT_Dynamic:
-      case CONSTANT_InvokeDynamic:
+      case CONSTANT_InvokeDynamic: {
+        jvm_class->constant_pool[i].info = malloc(4);
+        fread(jvm_class->constant_pool[i].info, 1, 4, file);
+        break;
+      }
+      case CONSTANT_Long:
+      case CONSTANT_Double: {
+        jvm_class->constant_pool[i].info = malloc(8);
+        fread(jvm_class->constant_pool[i].info, 1, 8, file);
+        i++;
+        break;
+      }
+      case CONSTANT_String:
+      case CONSTANT_Class:
       case CONSTANT_Module:
       case CONSTANT_Package:
-      default:
+      case CONSTANT_MethodType: {
+        jvm_class->constant_pool[i].info = malloc(2);
+        fread(jvm_class->constant_pool[i].info, 1, 2, file);
         break;
+      }
+      case CONSTANT_MethodHandle: {
+        jvm_class->constant_pool[i].info = malloc(3);
+        fread(jvm_class->constant_pool[i].info, 1, 3, file);
+        break;
+      }
+      default:
+        fprintf(stderr, "Unknown constant tag: %d at index %d\n", jvm_class->constant_pool[i].tag, i);
+        free_class_file(jvm_class);
+        fclose(file);
+        return nullptr;
+    }
+  }
+
+  jvm_class->access_flags = read_u2(file);
+  jvm_class->this_class = read_u2(file);
+  jvm_class->super_class = read_u2(file);
+
+  jvm_class->interfaces_count = read_u2(file);
+  if (jvm_class->interfaces_count > 0) {
+    jvm_class->interfaces = calloc(jvm_class->interfaces_count, sizeof(u2));
+    for (int i = 0; i < jvm_class->interfaces_count; i++) {
+      jvm_class->interfaces[i] = read_u2(file);
+    }
+  }
+
+  jvm_class->fields_count = read_u2(file);
+  for (int i = 0; i < jvm_class->fields_count; i++) {
+    jvm_class->fields[i].access_flags = read_u2(file);
+    jvm_class->fields[i].name_index = read_u2(file);
+    jvm_class->fields[i].descriptor_index = read_u2(file);
+    jvm_class->fields[i].attribute_count = read_u2(file);
+    jvm_class->fields[i].attributes = calloc(jvm_class->fields[i].attribute_count, sizeof(u2));
+    for (int j = 0; j < jvm_class->fields[i].attribute_count; j++) {
+      jvm_class->fields[i].attributes[j].name_index = read_u2(file);
+      jvm_class->fields[i].attributes[j].length = read_u4(file);
+      if (jvm_class->fields[i].attributes[j].length > 0) {
+        jvm_class->fields[i].attributes[j].info = calloc(jvm_class->fields[i].attributes[j].length, sizeof(u1));
+        fread(jvm_class->fields[i].attributes[j].info, 1, jvm_class->fields[i].attributes[j].length, file);
+      }
+    }
+  }
+
+  jvm_class->methods_count = read_u2(file);
+  jvm_class->methods = calloc(jvm_class->methods_count, sizeof(struct method_info));
+  for (int i = 0; i < jvm_class->methods_count; i++) {
+    jvm_class->methods[i].access_flags = read_u2(file);
+    jvm_class->methods[i].name_index = read_u2(file);
+    jvm_class->methods[i].descriptor_index = read_u2(file);
+    jvm_class->methods[i].attribute_count = read_u2(file);
+    jvm_class->methods[i].attributes = calloc(jvm_class->methods[i].attribute_count, sizeof(u2));
+    for (int j = 0; j < jvm_class->methods[i].attribute_count; j++) {
+      jvm_class->methods[i].attributes[j].name_index = read_u2(file);
+      jvm_class->methods[i].attributes[j].length = read_u4(file);
+      if (jvm_class->methods[i].attributes[j].length > 0) {
+        jvm_class->methods[i].attributes[j].info = calloc(jvm_class->methods[i].attributes[j].length, sizeof(u1));
+        fread(jvm_class->methods[i].attributes[j].info, 1, jvm_class->methods[i].attributes[j].length, file);
+      }
+    }
+  }
+
+  jvm_class->attribute_count = read_u2(file);
+  jvm_class->attributes = calloc(jvm_class->attribute_count, sizeof(struct attribute_info));
+  for (int i = 0; i < jvm_class->attribute_count; i++) {
+    jvm_class->attributes[i].name_index = read_u2(file);
+    jvm_class->attributes[i].length = read_u4(file);
+    if (jvm_class->attributes[i].length > 0) {
+      jvm_class->attributes[i].info = calloc(jvm_class->attributes[i].length, sizeof(u1));
+      fread(jvm_class->attributes[i].info, 1, jvm_class->attributes[i].length, file);
     }
   }
 
@@ -83,6 +167,54 @@ struct class_file *load_class_file(const char *name) {
 }
 
 void free_class_file(struct class_file *jvm_class) {
-  if (!jvm_class) return;
+  if (!jvm_class)
+    return;
+
+  if (jvm_class->constant_pool) {
+    for (u2 i = 1; i < jvm_class->constant_pool_count; i++) {
+      free(jvm_class->constant_pool[i].info);
+    }
+
+    free(jvm_class->constant_pool);
+  }
+
+  free(jvm_class->interfaces);
+
+  if (jvm_class->fields) {
+    for (u2 i = 0; i < jvm_class->fields_count; i++) {
+      if (jvm_class->fields[i].attributes) {
+        for (u2 j = 0; j < jvm_class->fields[i].attribute_count; j++) {
+          free(jvm_class->fields[i].attributes[j].info);
+        }
+
+        free(jvm_class->fields[i].attributes);
+      }
+    }
+
+    free(jvm_class->fields);
+  }
+
+  if (jvm_class->methods) {
+    for (u2 i = 0; i < jvm_class->methods_count; i++) {
+      if (jvm_class->methods[i].attributes) {
+        for (u2 j = 0; j < jvm_class->methods[i].attribute_count; j++) {
+          free(jvm_class->methods[i].attributes[j].info);
+        }
+
+        free(jvm_class->methods[i].attributes);
+      }
+    }
+
+    free(jvm_class->methods);
+  }
+
+  if (jvm_class->attributes) {
+    for (u2 i = 0; i < jvm_class->attribute_count; i++) {
+      free(jvm_class->attributes[i].info);
+    }
+
+    free(jvm_class->attributes);
+  }
+
   free(jvm_class);
 }
