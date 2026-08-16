@@ -11,27 +11,26 @@ static u1 read_u1(FILE* file) {
   return val;
 }*/
 
-static u2 read_u2(FILE* file) {
+static u2 read_u2(FILE *file) {
   u1 bytes[2];
   fread(&bytes, 1, 2, file);
   return (bytes[0] << 8) | bytes[1];
 }
 
-
-static u4 read_u4(FILE* file) {
+static u4 read_u4(FILE *file) {
   u1 bytes[4];
   fread(&bytes, 1, 4, file);
   return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
 }
 
-struct class_file* load_class_file(const char* name) {
-  FILE* file = fopen(name, "rb");
+struct class_file *load_class_file(const char *name) {
+  FILE *file = fopen(name, "rb");
   if (!file) {
     fprintf(stderr, "Failed to open file");
-    return NULL;
+    return nullptr;
   }
 
-  struct class_file*  jvm_class = malloc(sizeof(struct class_file));
+  struct class_file *jvm_class = malloc(sizeof(struct class_file));
 
   //Magic
   jvm_class->magic = read_u4(file);
@@ -39,7 +38,7 @@ struct class_file* load_class_file(const char* name) {
     fprintf(stderr, "No es una clase de jvm hdtpm!!\a\n");
     free(jvm_class);
     fclose(file);
-    return NULL;
+    return nullptr;
   }
 
   //Version
@@ -83,7 +82,7 @@ struct class_file* load_class_file(const char* name) {
   return jvm_class;
 }
 
-void free_class_file(struct class_file* jvm_class) {
-  if ( !jvm_class) return;
+void free_class_file(struct class_file *jvm_class) {
+  if (!jvm_class) return;
   free(jvm_class);
 }
