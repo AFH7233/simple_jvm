@@ -24,14 +24,14 @@ static u4 read_u4(FILE* file) {
   return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
 }
 
-class_file* load_class_file(const char* name) {
+struct class_file* load_class_file(const char* name) {
   FILE* file = fopen(name, "rb");
   if (!file) {
     fprintf(stderr, "Failed to open file");
     return NULL;
   }
 
-  class_file*  jvm_class = malloc(sizeof(class_file));
+  struct class_file*  jvm_class = malloc(sizeof(struct class_file));
 
   //Magic
   jvm_class->magic = read_u4(file);
@@ -53,7 +53,7 @@ class_file* load_class_file(const char* name) {
   return jvm_class;
 }
 
-void free_class_file(class_file* jvm_class) {
+void free_class_file(struct class_file* jvm_class) {
   if ( !jvm_class) return;
   free(jvm_class);
 }

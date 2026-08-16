@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   }
 
   const char* file_name = argv[1];
-  class_file* jvm_class = load_class_file(file_name);
+  struct class_file* jvm_class = load_class_file(file_name);
   if (!jvm_class) {
     fprintf(stderr, "Cannot read file\n");
     return EXIT_FAILURE;
