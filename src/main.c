@@ -17,8 +17,7 @@ int main(const int argc, char **argv) {
   }
 
   struct VM vm;
-  vm_init(&vm);
-  vm_load_class(&vm, jvm_class);
+  vm_run_main(&vm, jvm_class);
 
   free_class_file(jvm_class);
   return EXIT_SUCCESS;

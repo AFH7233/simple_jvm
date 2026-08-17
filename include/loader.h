@@ -51,6 +51,22 @@ struct field_info {
   struct attribute_info *attributes;
 };
 
+struct code_attribute {
+  u2 name_index;
+  u4 length;
+  u2 max_stack;
+  u2 max_locals;
+  u4 bytecode_length;
+  u1 *bytecode;
+  /*{ u2 start_pc;
+    u2 end_pc;
+    u2 handler_pc;
+    u2 catch_type;
+  } exception_table[exception_table_length];
+  u2 attributes_count;
+  struct attribute_info* attributes;*/
+};
+
 struct class_file {
   u4 magic;
   u2 major_version;
@@ -76,6 +92,7 @@ struct attribute_info *find_attribute_info(struct class_file *jvm_class,
                                            struct method_info *method,
                                            const char *name);
 void free_class_file(struct class_file *jvm_class);
-char *get_utf8_string(struct class_file *jvm_class, u2 index);
+char *get_utf8_string(struct class_file *jvm_class, u2 name_index);
+// struct code_attribute *get_code_attribute(struct class_file *jvm_class, u1 name_index);
 
 #endif //LOADER_H

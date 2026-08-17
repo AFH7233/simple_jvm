@@ -5,23 +5,9 @@
 
 #include "../include/log.h"
 
-static u1 read_u1(FILE *file) {
-  u1 val;
-  fread(&val, 1, 1, file);
-  return val;
-}
-
-static u2 read_u2(FILE *file) {
-  u1 bytes[2];
-  fread(&bytes, 1, 2, file);
-  return (bytes[0] << 8) | bytes[1];
-}
-
-static u4 read_u4(FILE *file) {
-  u1 bytes[4];
-  fread(&bytes, 1, 4, file);
-  return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-}
+static u1 read_u1(FILE *file);
+static u2 read_u2(FILE *file);
+static u4 read_u4(FILE *file);
 
 struct class_file *load_class_file(const char *name) {
   FILE *file = fopen(name, "rb");
@@ -57,7 +43,7 @@ struct class_file *load_class_file(const char *name) {
         jvm_class->constant_pool[i].info[0] = length >> 8;
         jvm_class->constant_pool[i].info[1] = length & 0xff;
         fread(jvm_class->constant_pool[i].info + 2, 1, length, file);
-        jvm_class->constant_pool[i].info[length + 2] = (u1) '\0' ; // This way less problems for now
+        jvm_class->constant_pool[i].info[length + 2] = (u1) '\0'; // This way less problems for now
         break;
       }
       case CONSTANT_Integer:
@@ -243,15 +229,35 @@ struct attribute_info *find_attribute_info(struct class_file *jvm_class,
   for (int i = 0; i < method->attribute_count; i++) {
     const char *attribute_name = get_utf8_string(jvm_class, method->attributes[i].name_index);
     if (attribute_name && strcmp(attribute_name, name) == 0) {
-      return &jvm_class->attributes[i];
+      return &method->attributes[i];
     }
   }
   return nullptr;
 }
 
-char *get_utf8_string(struct class_file *jvm_class, u2 index) {
-  if (index >= jvm_class->constant_pool_count || jvm_class->constant_pool[index].tag != CONSTANT_Utf8) {
+char *get_utf8_string(struct class_file *jvm_class, u2 name_index) {
+  if (name_index >= jvm_class->constant_pool_count || jvm_class->constant_pool[name_index].tag != CONSTANT_Utf8) {
     return nullptr;
   }
-  return (char *) (jvm_class->constant_pool[index].info + 2);
+  return (char *) (jvm_class->constant_pool[name_index].info + 2);
+}
+
+// Statics functions section
+
+static u1 read_u1(FILE *file) {
+  u1 val;
+  fread(&val, 1, 1, file);
+  return val;
+}
+
+static u2 read_u2(FILE *file) {
+  u1 bytes[2];
+  fread(&bytes, 1, 2, file);
+  return (bytes[0] << 8) | bytes[1];
+}
+
+static u4 read_u4(FILE *file) {
+  u1 bytes[4];
+  fread(&bytes, 1, 4, file);
+  return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
 }
