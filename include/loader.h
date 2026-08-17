@@ -71,6 +71,11 @@ struct class_file {
 };
 
 struct class_file *load_class_file(const char *name);
+struct method_info *find_method_info(struct class_file *jvm_class, const char *name, const char *descriptor);
+struct attribute_info *find_attribute_info(struct class_file *jvm_class,
+                                           struct method_info *method,
+                                           const char *name);
 void free_class_file(struct class_file *jvm_class);
+char *get_utf8_string(struct class_file *jvm_class, u2 index);
 
 #endif //LOADER_H

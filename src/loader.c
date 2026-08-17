@@ -1,6 +1,7 @@
 #include "loader.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/log.h"
 
@@ -52,10 +53,11 @@ struct class_file *load_class_file(const char *name) {
     switch (jvm_class->constant_pool[i].tag) {
       case CONSTANT_Utf8: {
         const u2 length = read_u2(file);
-        jvm_class->constant_pool[i].info = malloc(2 + length);
+        jvm_class->constant_pool[i].info = calloc(3 + length, sizeof(u1));
         jvm_class->constant_pool[i].info[0] = length >> 8;
         jvm_class->constant_pool[i].info[1] = length & 0xff;
         fread(jvm_class->constant_pool[i].info + 2, 1, length, file);
+        jvm_class->constant_pool[i].info[length + 2] = (u1) '\0' ; // This way less problems for now
         break;
       }
       case CONSTANT_Integer:
@@ -166,6 +168,11 @@ struct class_file *load_class_file(const char *name) {
   return jvm_class;
 }
 
+struct method_info *find_method_info(struct class_file *jvm_class, const char *name, const char *descriptor);
+struct attribute_info *find_attribute_info(struct class_file *jvm_class,
+                                           struct method_info *method,
+                                           const char *descriptor);
+
 void free_class_file(struct class_file *jvm_class) {
   if (!jvm_class)
     return;
@@ -217,4 +224,34 @@ void free_class_file(struct class_file *jvm_class) {
   }
 
   free(jvm_class);
+}
+
+struct method_info *find_method_info(struct class_file *jvm_class, const char *name, const char *descriptor) {
+  for (int i = 0; i < jvm_class->methods_count; i++) {
+    const char *method_name = get_utf8_string(jvm_class, jvm_class->methods[i].name_index);
+    const char *method_descriptor = get_utf8_string(jvm_class, jvm_class->methods[i].descriptor_index);
+    if (method_name && method_descriptor && strcmp(method_name, name) == 0 && strcmp(method_descriptor, descriptor) ==
+      0) {
+      return &jvm_class->methods[i];
+    }
+  }
+  return nullptr;
+}
+struct attribute_info *find_attribute_info(struct class_file *jvm_class,
+                                           struct method_info *method,
+                                           const char *name) {
+  for (int i = 0; i < method->attribute_count; i++) {
+    const char *attribute_name = get_utf8_string(jvm_class, method->attributes[i].name_index);
+    if (attribute_name && strcmp(attribute_name, name) == 0) {
+      return &jvm_class->attributes[i];
+    }
+  }
+  return nullptr;
+}
+
+char *get_utf8_string(struct class_file *jvm_class, u2 index) {
+  if (index >= jvm_class->constant_pool_count || jvm_class->constant_pool[index].tag != CONSTANT_Utf8) {
+    return nullptr;
+  }
+  return (char *) (jvm_class->constant_pool[index].info + 2);
 }

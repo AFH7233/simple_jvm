@@ -24,7 +24,7 @@ struct VM {
 void vm_init(struct VM *vm);
 void vm_load_class(struct VM *vm, struct class_file *jvm_class);
 void vm_run(struct VM *vm);
-void vm_push(struct VM *vm, int value);
-int vm_pop(struct VM *vm);
+void vm_push(struct VM *vm, uint32_t value);
+uint32_t vm_pop(struct VM *vm);
 
 #endif //VM_H
